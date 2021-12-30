@@ -1,7 +1,8 @@
-from entities import UserTx
+import pandas as pd
 from flask import Flask
 from pony.orm import db_session, select
-import pandas as pd
+
+from entities import UserTx
 
 app = Flask(__name__)
 
