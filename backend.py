@@ -1,17 +1,19 @@
 import pandas as pd
+
 from flask import Flask
 from pony.orm import db_session, select
-
+from inputs import address_inputs, method_input
 from entities import UserTx
 
 app = Flask(__name__)
+          
 
-@app.route("/")
+@app.route("/", methods=['POST'])
 def hello_yrs_backend():
     with db_session:
       # user input goes here
       # TODO: figure out how to get user input from vue into this
-      ADDRESSES = ['0x5b607d28180F7260c6726048E909CB8f1A271CE0','0xe219B069D0c35186Dc97cB550e5Dc3CE863aA766']
+      ADDRESSES, METHOD = address_inputs(), method_input()
       
       # query txs
       result = select(

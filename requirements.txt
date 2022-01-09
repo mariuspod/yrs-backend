@@ -1,3 +1,4 @@
+eth-brownie
 Flask
 pandas
 pony
