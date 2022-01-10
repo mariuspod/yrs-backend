@@ -1,6 +1,6 @@
 from pony.orm import *
 from decimal import Decimal
-from config import connect_db
+from db.config import connect_db
 
 db = connect_db()
 

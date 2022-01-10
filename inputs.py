@@ -14,7 +14,7 @@ def address_inputs():
         clean = clean_address(address)
         if clean: good_list.append(clean)
         else: bad_list.append(address)
-    return (good_list, bad_list)
+    return good_list, bad_list
 
 
 def clean_address(address: str):
@@ -26,7 +26,3 @@ def is_address(address: str) -> bool:
         len(address) == 42
     ])
     
-
-'''curl localhost:5000?type=FIFO&addresses=['0x5b607d28180F7260c6726048E909CB8f1A271CE0','0xe219B069DGGG0c35186Dc97cB550e5Dc3CE863aA7667']'''
-
-'''curl localhost:5000 -H 'Content-Type: application/json' -d '{"type":"FIFO","addresses":["0x5b607d28180F7260c6726048E909CB8f1A271CE0","0xe219B069D0c35186Dc97cB550e5Dc3CE863aA766"]}'  '''
