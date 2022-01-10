@@ -1,5 +1,7 @@
 eth-brownie
 Flask
+flask_cors
+numpy
 pandas
 pony
 psycopg2
