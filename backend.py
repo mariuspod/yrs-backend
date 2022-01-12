@@ -1,13 +1,15 @@
-from flask import Flask
-from config import connect_db
-db = connect_db()
-from pony.orm import db_session
+
+from flask import Flask, jsonify
+from flask_cors import CORS
+
+import yrs
 
 app = Flask(__name__)
+CORS(app)
 
-@app.route("/")
-def hello_yrs_backend():
-    with db_session:
-      result = db.select('NOW()')
-      return f"<p>Hello, yrs-backend!</p><p>it's {result[0]}</p>"
+@app.route("/", methods=['POST'])
+def yrs_backend():
+    return(jsonify(yrs.main()))
+        
+    
 
