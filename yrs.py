@@ -5,7 +5,8 @@ import pandas as pd
 from pandas._libs.tslibs.timedeltas import Timedelta
 
 from inputs import address_inputs, method_input
-from lots import delete_active_lot, record_spent_lot, unspent_lots_for_export
+from lots import (delete_active_lot, get_active_lot, prep_lots,
+                  record_spent_lot, unspent_lots_for_export)
 from transactions import transactions, tx_list_for_export, unique_tokens_sold
 
 
@@ -17,19 +18,7 @@ def main():
     taxable_events, leftover_unspent_lots = [], pd.DataFrame()
     
     for vault in unique_tokens_sold(_out):
-      # Filter for the vault we're on
-      spent_lots = _out[_out['vault'] == vault]
-      unspent_lots = _in[_in['vault'] == vault]
-      
-      # Filter out transfers to self, those are not taxable events
-      spent_lots = spent_lots[~spent_lots['to_address'].isin(GOOD_ADDRESSES)]
-      unspent_lots = unspent_lots[~unspent_lots['from_address'].isin(GOOD_ADDRESSES)]
-      
-      # sort spent lots from least to most recent
-      spent_lots = spent_lots.sort_values(by='block',ascending=True).reset_index(drop=True)
-              
-      # sort unspent lots according to selected method
-      unspent_lots = unspent_lots.sort_values(by='block',ascending=True if METHOD == 'FIFO' else False).reset_index(drop=True)
+      spent_lots, unspent_lots = prep_lots(_in, _out, vault, GOOD_ADDRESSES, METHOD)
       
       # process
       for row in spent_lots.itertuples(): taxable_events, unspent_lots = process_sale(row, METHOD, taxable_events, unspent_lots)
@@ -37,17 +26,13 @@ def main():
       # record all lots still unsold    
       leftover_unspent_lots = pd.concat([leftover_unspent_lots, unspent_lots]).reset_index(drop=True)
         
-    # prepare dict
-    result = {}
-    result['taxable events'] = pd.DataFrame(taxable_events).to_dict()
-    
-    # add some extra info
-    result['failures'] = BAD_ADDRESSES
-    result['unspent lots'] = unspent_lots_for_export(leftover_unspent_lots)
-    result['transactions'] = tx_list_for_export(_in, _out)
-    
     # voila
-    return result
+    return {
+      'taxable events': pd.DataFrame(taxable_events).to_dict(),
+      'failures': BAD_ADDRESSES,
+      'unspent lots': unspent_lots_for_export(leftover_unspent_lots),
+      'transactions': tx_list_for_export(_in, _out),
+    }
 
 def process_sale(row, method, unspent_lots, taxable_events):
     # cache these so we can manipulate them later
@@ -57,13 +42,7 @@ def process_sale(row, method, unspent_lots, taxable_events):
     
     #start
     while True:
-      if method == 'LIFO':
-        unspent_lots = unspent_lots.sort_values(by='block',ascending=False)
-        temp = unspent_lots[unspent_lots['block'] >= row.block]          
-        unspent_lots = unspent_lots[unspent_lots['block'] < row.block]
-        unspent_lots = pd.concat([unspent_lots, temp])
-        
-      active_lot = unspent_lots.iloc[0]
+      active_lot, unspent_lots = get_active_lot(row, method, unspent_lots)
       assert active_lot.timestamp <= row.timestamp
       if sold_amount > active_lot.amount:
         taxable_events.append(process_portion_of_sale(sold_amount, row, active_lot))
