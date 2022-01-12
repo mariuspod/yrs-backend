@@ -9,12 +9,12 @@ def method_input():
 
 
 def address_inputs():
-    good_list, bad_list = [], []
+    good_list, bad_list = set(), set()
     for address in request.json['addresses']:
         clean = clean_address(address)
-        if clean: good_list.append(clean)
-        else: bad_list.append(address)
-    return good_list, bad_list
+        if clean: good_list.add(clean)
+        else: bad_list.add(address)
+    return list(good_list), list(bad_list)
 
 
 def clean_address(address: str):
