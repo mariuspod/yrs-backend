@@ -20,7 +20,7 @@ def main():
     for vault in unique_tokens_sold(_out):
       spent_lots, unspent_lots = prep_lots(_in, _out, vault, GOOD_ADDRESSES, METHOD)
       
-      # process
+      # process vault
       for row in spent_lots.itertuples(): taxable_events, unspent_lots = process_sale(row, METHOD, taxable_events, unspent_lots)
       
       # record all lots still unsold    
