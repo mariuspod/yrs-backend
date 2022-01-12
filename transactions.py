@@ -64,12 +64,11 @@ def transactions(GOOD_ADDRESSES: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame]
     
     # create DataFrames
     _in, _out = pd.DataFrame(_in), pd.DataFrame(_out)
-    try: _in.columns = ['timestamp','block','hash','chainid','symbol','vault','type','from','to','amount','price','value_usd','gas_used','gas_price']
-    except: pass
+    _in.columns = ['timestamp','block','hash','chainid','symbol','vault','type','from_address','to_address','amount','price','value_usd','gas_used','gas_price']
     try:
-        _out.columns = ['timestamp','block','hash','chainid','symbol','vault','type','from','to','amount','price','value_usd','gas_used','gas_price']
+        _out.columns = ['timestamp','block','hash','chainid','symbol','vault','type','from_address','to_address','amount','price','value_usd','gas_used','gas_price']
         _out = _out.sort_values(['vault','timestamp'],ascending=[True,True]).reset_index(drop=True)
-    except: pass
+    except: pass # pass when user has no outbound txs
   
     _in.timestamp = pd.to_datetime(_in.timestamp,unit='s')
     _out.timestamp = pd.to_datetime(_out.timestamp,unit='s')
@@ -81,17 +80,23 @@ def unique_tokens_sold(tokens_out: pd.DataFrame) -> List[str]:
     except: return []
     
 def tx_list_for_export(_in: pd.DataFrame, _out: pd.DataFrame) -> List[dict]:
-    txs = pd.concat([_in,_out]).sort_values(by='timestamp')
+    txs = pd.concat([_in,_out]).sort_values(by='block')
     txs['gas_cost'] = txs.gas_price * txs.gas_used / Decimal(1e18)
     txs = txs.drop(columns=['gas_price','gas_used'])
-    return [{
-        'block': row.block,
-        'hash': row.hash,
-        'timestamp': row.timestamp,
-        'to_address': row.to_address,
-        'from_address': row.from_address,
-        'amount': row.amount,
-        'price': row.price,
-        'value_usd': row.value_usd,
-    } for row in txs.itertuples()]
+    try:
+        return pd.DataFrame([{
+            'block': row.block,
+            'hash': row.hash,
+            'timestamp': row.timestamp,
+            'vault': row.vault,
+            'symbol': row.symbol,
+            'to_address': row.to_address,
+            'from_address': row.from_address,
+            'type': row.type,
+            'amount': row.amount,
+            'price': row.price,
+            'value_usd': row.value_usd,
+            'gas': row.gas_cost,
+        } for row in txs.itertuples()]).to_dict()
+    except: raise Exception(txs.columns)
     
